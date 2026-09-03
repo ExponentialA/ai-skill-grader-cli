@@ -1,0 +1,16 @@
+{
+  "name": "skill-grader",
+  "version": "0.1.0",
+  "description": "AI Skill Grader, inside Codex. At the start of each session it gives a plain-English read on any skill it hasn't shown you yet — is it safe to run, and does it do what it says — using the same static run-safety engine as the site (no LLM, no network). It also blocks a manipulative skill's scripts from running. Ask for the full report on any skill.",
+  "author": {
+    "name": "AI Skill Grader"
+  },
+  "homepage": "https://www.aiskillgrader.com/",
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI Skill Grader",
+    "shortDescription": "A plain-English run-safety read on every skill, before you rely on it.",
+    "category": "Security"
+  }
+}

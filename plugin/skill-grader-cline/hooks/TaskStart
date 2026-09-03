@@ -1,0 +1,16 @@
+#!/bin/sh
+# AI Skill Grader — Cline TaskStart hook.
+#
+# Cline runs the hook file named exactly "TaskStart" (no extension, executable)
+# from ~/Documents/Cline/Rules/Hooks/ or .clinerules/hooks/. Install by symlinking
+# this file there:
+#   ln -s "$PWD/plugin/skill-grader-cline/hooks/TaskStart" ~/Documents/Cline/Rules/Hooks/TaskStart
+#
+# This is a /bin/sh wrapper (not a `#!/usr/bin/env node` script) so it doesn't
+# depend on Node being on the agent's PATH — run-node.sh finds Node even when it
+# isn't. It resolves its own real location so the paths work when reached via a
+# symlink.
+SELF="$0"
+[ -L "$SELF" ] && SELF="$(readlink "$SELF")"
+PLUGIN="$(cd "$(dirname "$SELF")/.." && pwd)"
+exec sh "$PLUGIN/../shared/run-node.sh" "$PLUGIN/scripts/scan-session.js"

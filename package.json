@@ -1,0 +1,43 @@
+{
+  "name": "ai-skill-grader",
+  "version": "0.1.0",
+  "description": "Install the AI Skill Grader — a plain-English run-safety read (and script block) for the skills your coding agent runs. Works with Codex, Claude Code, Cursor, Cline, and Windsurf.",
+  "bin": {
+    "skill-grader": "bin/skill-grader.mjs"
+  },
+  "files": [
+    "bin",
+    "plugin",
+    "product-surface/lib",
+    "scripts/install-plugin.mjs",
+    "scripts/report-installed.js"
+  ],
+  "keywords": [
+    "ai",
+    "skills",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "cline",
+    "windsurf",
+    "security",
+    "run-safety",
+    "SKILL.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "homepage": "https://www.aiskillgrader.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ExponentialA/ai-skill-grader-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ExponentialA/ai-skill-grader-cli/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

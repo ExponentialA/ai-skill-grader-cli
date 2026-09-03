@@ -1,0 +1,6 @@
+{
+  "name": "skill-grader",
+  "version": "0.2.0",
+  "description": "AI Skill Grader, inside Claude. Before any skill runs, a plain-English read on what it can touch and what to check first. Blocks skills whose text tries to manipulate or exfiltrate; ask for the full report on any skill.",
+  "author": "AI Skill Grader"
+}

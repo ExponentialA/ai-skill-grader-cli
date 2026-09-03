@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "pre_run_command": [
+      {
+        "command": "node \"/ABSOLUTE/PATH/TO/ai-skill-grader/plugin/skill-grader-windsurf/scripts/scan-command.js\"",
+        "show_output": true
+      }
+    ]
+  }
+}

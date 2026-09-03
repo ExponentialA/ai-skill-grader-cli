@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+// Shared installed-tool report command. It fetches the same report the website
+// and email use, then prints it into the agent session.
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
+const API = process.env.SKILL_GRADER_API || "https://www.aiskillgrader.com/api/report";
+const SITE = process.env.SKILL_GRADER_SITE || "https://www.aiskillgrader.com/";
+
+let reportText;
+try {
+  ({ reportText } = require(path.resolve(__dirname, "../product-surface/lib/report-email.js")));
+} catch (_error) {
+  reportText = null;
+}
+
+function skillRoots() {
+  const home = os.homedir();
+  const project = process.env.CURSOR_PROJECT_DIR || process.env.ROOT_WORKSPACE_PATH || process.cwd();
+  const codexHome = process.env.CODEX_HOME || path.join(home, ".codex");
+  return [
+    path.join(project, ".agents", "skills"),
+    path.join(project, ".codex", "skills"),
+    path.join(project, ".claude", "skills"),
+    path.join(project, ".cursor", "skills"),
+    path.join(project, ".windsurf", "skills"),
+    path.join(project, ".clinerules", "skills"),
+    path.join(codexHome, "skills"),
+    path.join(home, ".agents", "skills"),
+    path.join(home, ".claude", "skills"),
+    path.join(home, ".cursor", "skills"),
+    path.join(home, ".windsurf", "skills"),
+    path.join(home, "Documents", "Cline", "Skills"),
+  ];
+}
+
+function resolveSource(arg) {
+  if (/^https?:\/\//i.test(arg)) return arg;
+  const leaf = String(arg).split(":").pop().trim();
+  for (const root of skillRoots()) {
+    const dir = path.join(root, leaf);
+    try {
+      const f = fs.readdirSync(dir).find((n) => n.toLowerCase() === "skill.md");
+      if (!f) continue;
+      const m = fs.readFileSync(path.join(dir, f), "utf8").match(/^(?:source|repo|url|homepage):\s*(https?:\/\/\S+)/im);
+      return m ? m[1] : { needUrl: true };
+    } catch (_error) {
+      /* not here */
+    }
+  }
+  return { needUrl: true };
+}
+
+async function main() {
+  const arg = (process.argv[2] || "").trim();
+  if (!arg) {
+    console.log("Tell me which skill: name the skill you want the full report on, or paste its GitHub link.");
+    return;
+  }
+  const src = resolveSource(arg);
+  if (src && src.needUrl) {
+    console.log(`I couldn't find where "${arg}" came from. Paste its GitHub link and I'll pull the full report.`);
+    return;
+  }
+
+  let data;
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sourceUrl: src }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.log(body.error || `Couldn't get the report right now (${res.status}). Try again in a moment.`);
+      return;
+    }
+    data = await res.json();
+  } catch (error) {
+    console.log(`Couldn't reach AI Skill Grader (${error.message || error}). Try again in a moment.`);
+    return;
+  }
+
+  const out = [];
+  if (!data.graded) {
+    out.push(`> ${data.note || "This one hasn't been deep-graded yet — here's the fast preview. The full report takes a few minutes."}`, "");
+  }
+  if (reportText) {
+    out.push(reportText({ source: data.source, skills: data.skills || [], partial: null }));
+  } else {
+    out.push(JSON.stringify(data.skills, null, 2));
+  }
+  const link = data.source && data.source.url ? `${SITE}?source=${encodeURIComponent(data.source.url)}` : SITE;
+  out.push("", `See the full styled report: ${link}`);
+  console.log(out.join("\n"));
+}
+
+main();

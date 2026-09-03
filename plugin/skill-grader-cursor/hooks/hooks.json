@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "node \"/ABSOLUTE/PATH/TO/ai-skill-grader/plugin/skill-grader-cursor/scripts/scan-session.js\"",
+        "timeout": 15
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "type": "command",
+        "command": "node \"/ABSOLUTE/PATH/TO/ai-skill-grader/plugin/skill-grader-cursor/scripts/scan-command.js\"",
+        "timeout": 10
+      }
+    ]
+  }
+}
