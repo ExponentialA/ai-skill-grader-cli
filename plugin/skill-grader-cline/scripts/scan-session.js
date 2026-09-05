@@ -106,7 +106,7 @@ function emit(read, rootPath) {
 function main() {
   let triageSignals;
   try {
-    ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/reports.js")));
+    ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/triage.js")));
   } catch (_error) {
     allow();
   }
