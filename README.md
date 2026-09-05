@@ -31,7 +31,7 @@ npx ai-skill-grader --all        # every tool it detects
 npx ai-skill-grader report "owner/repo"      # or a GitHub URL, or an installed skill name
 ```
 
-Or install the on-demand report as a skill via [skills.sh](https://skills.ws):
+Or install the on-demand report as a skill via [skills.sh](https://skills.sh):
 
 ```bash
 npx skills add ExponentialA/ai-skill-grader-cli
