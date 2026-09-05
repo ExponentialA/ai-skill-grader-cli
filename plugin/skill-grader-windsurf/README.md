@@ -26,12 +26,12 @@ What it does **not** block: risky-but-not-manipulative skills, inline commands
 with no script path, and MCP calls. There's no read to warn you first, so on
 Windsurf especially — sandbox anything before you trust it.
 
-## Install (prototype)
+## Install
 
 Fast install from the website:
 
 ```bash
-curl -fsSL https://www.aiskillgrader.com/install.sh | sh -s -- windsurf
+npx ai-skill-grader windsurf
 ```
 
 Manual install from this repo:

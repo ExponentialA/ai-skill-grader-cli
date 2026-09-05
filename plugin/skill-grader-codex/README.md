@@ -1,18 +1,18 @@
 # AI Skill Grader (in Codex)
 
-The AI Skill Grader, brought inside OpenAI Codex. Install it once and you get a
-plain-English read on what your skills can touch and what to check first,
-without leaving your session. The full report on any skill is one ask away.
+The AI Skill Grader, brought inside OpenAI Codex. Install it once and you can
+ask for a plain-English report on any skill or GitHub source without leaving
+your task.
 
 Same static check as the site and the Claude adapter
 (`triageSignals`) — no LLM, no network — so it's instant and works offline.
 
 ## What you see
 
-- **On install, first session (once):** a one-line welcome, then a read on the
-  skills you already have.
-- **At the start of a session with a new skill:** the preview — same read as the
-  site.
+- **On request:** the full AI Skill Grader report for a skill name or GitHub
+  link.
+- **In Codex builds that execute local plugin hooks:** a one-line welcome, then
+  a read on the skills you already have. New skills are shown at session start.
   - clean → `✓ <skill> — nothing risky showed up, safe to inspect.`
   - risky → `⚠️ <skill> — use with care: it runs scripts, wants credentials…`
   - malicious → `⛔ <skill> — manipulation/exfiltration; its scripts are blocked from running.`
@@ -23,15 +23,17 @@ Same static check as the site and the Claude adapter
   to the styled version.
 - **Skills you've already seen: silent.**
 
-## Read at session start, block scripts at run
+## Report on request, hook where supported
 
 Claude Code invokes a skill through a tool call, so the Claude adapter reads (and
 can **block**) each skill the moment it runs. **Codex loads a skill as context**,
 not as a tool call — there's no per-skill "run" event to gate. So this adapter
-does two things:
+does three things:
 
-- **Reads** every skill it hasn't shown you yet at **`SessionStart`** (the read
-  above).
+- **Installs** a report skill in `~/.codex/skills` so "full report on <skill or
+  GitHub URL>" works even if session hooks are not running.
+- **Includes** a `SessionStart` read for Codex builds that execute local plugin
+  hooks.
 - **Blocks** — via a **`PreToolUse`** hook — any shell command that would run a
   script from a skill flagged **manipulative** (the ⛔ case), enforcing that
   verdict at run time.
@@ -41,12 +43,12 @@ read, not a block), inline commands a skill tells the agent to run with no scrip
 path, and MCP calls (no path to attribute). Sandbox anything flagged before
 trusting it.
 
-## Install (prototype)
+## Install
 
 Fast install from the website:
 
 ```bash
-curl -fsSL https://www.aiskillgrader.com/install.sh | sh -s -- codex
+npx ai-skill-grader codex
 ```
 
 Manual install from this repo:
@@ -75,10 +77,12 @@ Manual install from this repo:
    codex plugin add skill-grader@skill-grader-dev
    ```
 
-3. Start a Codex session. The welcome + first reads appear on `SessionStart`,
-   and the `PreToolUse` script-block is active. (`codex plugin list` confirms it's
-   installed.) Both hooks are registered by the plugin's `hooks/hooks.json` — no
-   extra setup.
+3. Start a Codex session. Ask for "the AI Skill Grader report on <skill or
+   GitHub URL>" to fetch the report inside Codex. In Codex builds that execute
+   local plugin hooks, the welcome + first reads appear on `SessionStart`, and
+   the `PreToolUse` script-block is active. (`codex plugin list` confirms it's
+   installed.) Both hooks are registered by the plugin's `hooks.json` — no extra
+   setup.
 
 The full-report command talks to the live service (`aiskillgrader.com`); set
 `SKILL_GRADER_API` / `SKILL_GRADER_SITE` to point elsewhere.
@@ -94,10 +98,8 @@ The full-report command talks to the live service (`aiskillgrader.com`); set
 - The full report is **instant for a skill we've already graded**; a brand-new
   one comes back as the fast preview with "grading, back in a few minutes."
 
-## Next steps (if this validates)
+## Still limited
 
 - Widen the block beyond flagged-skill *scripts* — e.g. inline commands and MCP
   calls a flagged skill would trigger (needs command-level judgment, not just
   skill-text triage).
-- Standalone/marketplace packaging (bundle the engine with a drift-check) so
-  install needs no repo clone.

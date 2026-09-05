@@ -1,0 +1,11 @@
+{
+  "name": "skill-grader-local",
+  "owner": { "name": "AI Skill Grader", "url": "https://www.aiskillgrader.com" },
+  "plugins": [
+    {
+      "name": "skill-grader",
+      "source": "./skill-grader",
+      "description": "A plain-English run-safety read on each skill before it runs; blocks skills whose text tries to manipulate or exfiltrate."
+    }
+  ]
+}

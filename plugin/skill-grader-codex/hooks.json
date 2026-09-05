@@ -1,0 +1,27 @@
+{
+  "description": "Reads each skill Codex loads that it hasn't shown you yet, flags risky ones, and blocks manipulative skill scripts from running.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"./shared/run-node.sh\" \"./scripts/scan-session.js\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"./shared/run-node.sh\" \"./scripts/scan-command.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

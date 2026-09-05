@@ -2,9 +2,9 @@
 # AI Skill Grader — Cline TaskStart hook.
 #
 # Cline runs the hook file named exactly "TaskStart" (no extension, executable)
-# from ~/Documents/Cline/Rules/Hooks/ or .clinerules/hooks/. Install by symlinking
+# from ~/Documents/Cline/Hooks/ or .clinerules/hooks/. Install by symlinking
 # this file there:
-#   ln -s "$PWD/plugin/skill-grader-cline/hooks/TaskStart" ~/Documents/Cline/Rules/Hooks/TaskStart
+#   ln -s "$PWD/plugin/skill-grader-cline/hooks/TaskStart" ~/Documents/Cline/Hooks/TaskStart
 #
 # This is a /bin/sh wrapper (not a `#!/usr/bin/env node` script) so it doesn't
 # depend on Node being on the agent's PATH — run-node.sh finds Node even when it

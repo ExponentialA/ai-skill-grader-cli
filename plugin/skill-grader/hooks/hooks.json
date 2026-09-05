@@ -1,5 +1,5 @@
 {
-  "description": "Reads each skill before it runs (run-safety) and blocks malicious ones.",
+  "description": "Reads each skill before it runs and blocks manipulative ones.",
   "hooks": {
     "PreToolUse": [
       {

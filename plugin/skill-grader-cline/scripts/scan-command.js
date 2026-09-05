@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 
 function allow() {
+  process.stdout.write(JSON.stringify({ cancel: false }));
   process.exit(0);
 }
 function block(reason) {
@@ -20,7 +21,7 @@ function block(reason) {
 
 let checkCommand, blockReason;
 try {
-  ({ checkCommand, blockReason } = require(path.resolve(__dirname, "../../shared/action-guard.js")));
+  ({ checkCommand, blockReason } = require(path.resolve(__dirname, "../shared/action-guard.js")));
 } catch (_error) {
   allow();
 }
@@ -29,7 +30,14 @@ try {
 // aren't fully documented, so look for a command string in the likely places.
 function commandOf(input) {
   if (!input) return "";
-  const p = input.tool_input || input.toolInput || input.parameters || input.input || input;
+  const hook = input.preToolUse || input.pre_tool_use || null;
+  const p =
+    (hook && (hook.parameters || hook.tool_input || hook.toolInput || hook.input)) ||
+    input.tool_input ||
+    input.toolInput ||
+    input.parameters ||
+    input.input ||
+    input;
   if (typeof p === "string") return p;
   return p.command || p.command_line || p.cmd || "";
 }
@@ -43,7 +51,7 @@ function main() {
   }
   const command = commandOf(input);
   if (!command) allow();
-  const cwd = (input && input.cwd) || process.cwd();
+  const cwd = (input && input.cwd) || (input && Array.isArray(input.workspaceRoots) && input.workspaceRoots[0]) || process.cwd();
   const hit = checkCommand(command, cwd);
   if (hit) block(blockReason(hit));
   allow();

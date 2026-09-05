@@ -5,8 +5,8 @@
 // adapter, which reads each skill the moment it's invoked — this reads every
 // skill you have at the start of a session and surfaces a plain-English
 // run-safety read on any it hasn't shown you yet. Same static engine as the
-// site (triageSignals) and the same read builder as the other adapters
-// (../../shared/skill-read.js): no LLM, no network. It also records the plugin
+// site (triageSignals) and the same read builder as the other adapters:
+// no LLM, no network. It also records the plugin
 // root so the full-report skill can find its script.
 //
 // FAIL OPEN: any error => stay silent and let the session proceed. A safety
@@ -14,7 +14,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { buildRead } = require(path.resolve(__dirname, "../../shared/skill-read.js"));
+const { buildRead } = require(path.resolve(__dirname, "../shared/skill-read.js"));
 
 function codexHome() {
   return process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
@@ -99,7 +99,7 @@ function emit(read, rootPath) {
 function main() {
   let triageSignals;
   try {
-    ({ triageSignals } = require(path.resolve(__dirname, "../../../product-surface/lib/reports.js")));
+    ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/reports.js")));
   } catch (_error) {
     process.exit(0);
   }

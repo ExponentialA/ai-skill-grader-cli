@@ -34,7 +34,7 @@ function block(reason) {
 
 let triageSignals;
 try {
-  ({ triageSignals } = require(path.resolve(__dirname, "../../../product-surface/lib/reports.js")));
+  ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/reports.js")));
 } catch (_error) {
   allow();
 }
@@ -132,7 +132,7 @@ function main() {
   const risky = ["directLiveAction", "credentials", "scripts", "paid", "sensitive", "decisionCritical"].filter((k) => sig[k]);
   const safeLine = risky.length
     ? `⚠️ Use with care — it ${risky.map((k) => CONCERN[k]).join(", ")}. Try it in a sandbox first.`
-    : `✓ No run-safety flags — safe to inspect.`;
+    : `✓ Nothing risky showed up — safe to inspect.`;
   // Mirror the site's verdict-adaptive gate copy: with flags the pull is depth;
   // clean, the pull is the anatomy (what it can reach, what to check first).
   const cta = risky.length

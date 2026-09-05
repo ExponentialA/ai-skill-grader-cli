@@ -22,12 +22,12 @@ The read uses the same static check the site uses (`triageSignals`) —
 no LLM, no network — so it's instant and works offline. Output-trust detail
 comes from the full report.
 
-## Install (prototype)
+## Install
 
 Fast install from the website:
 
 ```bash
-curl -fsSL https://www.aiskillgrader.com/install.sh | sh -s -- claude
+npx ai-skill-grader claude
 ```
 
 The installer prepares the local files, then prints the `/plugin install ...`
@@ -50,9 +50,7 @@ The full-report command talks to the live service (`aiskillgrader.com`); set
 - The full report is **instant for a skill we've already graded**; a brand-new
   one comes back as the fast preview with "grading, back in a few minutes."
 
-## Next steps (if this validates)
+## Still limited
 
-- Standalone/marketplace packaging (bundle the engine with a drift-check, like
-  the site's gradeability conformance test) so install needs no repo clone.
-- The free-report allowance (first ~10) and the one-time email that follows.
-- Codex adapter on the same engine.
+- Claude Code still requires one command inside Claude Code after the installer
+  prepares the local files.

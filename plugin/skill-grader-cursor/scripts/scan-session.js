@@ -5,7 +5,7 @@
 // event to block), so — like the Codex adapter — this reads every skill it
 // hasn't shown you yet at session start and surfaces a plain-English run-safety
 // read. Same static engine as the site (triageSignals) and the same read
-// builder as the other adapters (../../shared/skill-read.js).
+// builder as the other adapters (../shared/skill-read.js).
 //
 // Cursor's sessionStart output has no user-facing message channel — only
 // `additional_context` (injected into the conversation) and `env`. So the read
@@ -16,7 +16,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { buildRead } = require(path.resolve(__dirname, "../../shared/skill-read.js"));
+const { buildRead } = require(path.resolve(__dirname, "../shared/skill-read.js"));
 
 function cursorHome() {
   return path.join(os.homedir(), ".cursor");
@@ -101,7 +101,7 @@ function emit(read, rootPath) {
 function main() {
   let triageSignals;
   try {
-    ({ triageSignals } = require(path.resolve(__dirname, "../../../product-surface/lib/reports.js")));
+    ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/reports.js")));
   } catch (_error) {
     process.exit(0);
   }

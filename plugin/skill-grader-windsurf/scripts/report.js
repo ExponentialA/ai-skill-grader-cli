@@ -19,7 +19,7 @@ const SITE = process.env.SKILL_GRADER_SITE || "https://www.aiskillgrader.com/";
 
 let reportText;
 try {
-  ({ reportText } = require(path.resolve(__dirname, "../../../product-surface/lib/report-email.js")));
+  ({ reportText } = require(path.resolve(__dirname, "../product-surface/lib/report-email.js")));
 } catch (_error) {
   reportText = null;
 }

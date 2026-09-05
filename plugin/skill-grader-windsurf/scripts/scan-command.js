@@ -14,7 +14,7 @@ const path = require("path");
 
 let checkCommand, blockReason;
 try {
-  ({ checkCommand, blockReason } = require(path.resolve(__dirname, "../../shared/action-guard.js")));
+  ({ checkCommand, blockReason } = require(path.resolve(__dirname, "../shared/action-guard.js")));
 } catch (_error) {
   process.exit(0);
 }

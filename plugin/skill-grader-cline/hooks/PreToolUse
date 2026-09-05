@@ -2,9 +2,9 @@
 # AI Skill Grader — Cline PreToolUse hook (Tier 1 action check).
 #
 # Cline runs the hook file named exactly "PreToolUse" (no extension, executable)
-# from ~/Documents/Cline/Rules/Hooks/ or .clinerules/hooks/. Install by symlinking
+# from ~/Documents/Cline/Hooks/ or .clinerules/hooks/. Install by symlinking
 # this file there:
-#   ln -s "$PWD/plugin/skill-grader-cline/hooks/PreToolUse" ~/Documents/Cline/Rules/Hooks/PreToolUse
+#   ln -s "$PWD/plugin/skill-grader-cline/hooks/PreToolUse" ~/Documents/Cline/Hooks/PreToolUse
 #
 # A /bin/sh wrapper so it doesn't depend on Node being on the agent's PATH
 # (run-node.sh finds Node even when it isn't). Resolves its own real location so

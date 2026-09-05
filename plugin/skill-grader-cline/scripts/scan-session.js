@@ -6,7 +6,7 @@
 // and Cursor adapters — this reads every skill it hasn't shown you yet at the
 // start of a task and surfaces a plain-English run-safety read. Same static
 // engine as the site (triageSignals) and the same read builder as the other
-// adapters (../../shared/skill-read.js).
+// adapters (../shared/skill-read.js).
 //
 // Cline hooks have no user-facing message channel — only `contextModification`
 // (which "shapes how Cline approaches work"). So the read is injected as context,
@@ -17,13 +17,17 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { buildRead } = require(path.resolve(__dirname, "../../shared/skill-read.js"));
+const { buildRead } = require(path.resolve(__dirname, "../shared/skill-read.js"));
 
 function stateHome() {
   return path.join(os.homedir(), ".skill-grader-cline");
 }
 function stateFile(name) {
   return path.join(stateHome(), name);
+}
+function allow() {
+  process.stdout.write(JSON.stringify({ cancel: false }));
+  process.exit(0);
 }
 
 // How the agent produces a full report on request (Cline-specific script path).
@@ -92,26 +96,27 @@ function emit(read, rootPath) {
   // Cline TaskStart: inject via contextModification, framed for the agent to
   // show the user, plus the enablement note for producing full reports on ask.
   const context =
-    "Show the user this AI Skill Grader run-safety read at the start of your reply, then continue with their request:\n\n" +
+    "Show the user this AI Skill Grader safety read at the start of your reply, then continue with their request:\n\n" +
     read.message +
     enablement(rootPath);
-  process.stdout.write(JSON.stringify({ contextModification: context }));
+  process.stdout.write(JSON.stringify({ cancel: false, contextModification: context }));
   process.exit(0);
 }
 
 function main() {
   let triageSignals;
   try {
-    ({ triageSignals } = require(path.resolve(__dirname, "../../../product-surface/lib/reports.js")));
+    ({ triageSignals } = require(path.resolve(__dirname, "../product-surface/lib/reports.js")));
   } catch (_error) {
-    process.exit(0);
+    allow();
   }
-  if (typeof triageSignals !== "function") process.exit(0);
+  if (typeof triageSignals !== "function") allow();
 
   let cwd = process.cwd();
   try {
     const input = JSON.parse(fs.readFileSync(0, "utf8"));
     if (input && input.cwd) cwd = input.cwd;
+    else if (input && Array.isArray(input.workspaceRoots) && input.workspaceRoots[0]) cwd = input.workspaceRoots[0];
   } catch (_error) {
     /* no/!JSON stdin — fall back to process cwd */
   }
@@ -160,7 +165,7 @@ function main() {
     }
   }
 
-  if (!read) process.exit(0);
+  if (!read) allow();
   emit(read, rootPath);
 }
 

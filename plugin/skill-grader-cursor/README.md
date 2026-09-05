@@ -36,12 +36,12 @@ the conversation. So this adapter does two things:
 What it does **not** block: risky-but-not-manipulative skills, inline commands
 with no script path, and MCP calls. Sandbox anything flagged before trusting it.
 
-## Install (prototype)
+## Install
 
 Fast install from the website:
 
 ```bash
-curl -fsSL https://www.aiskillgrader.com/install.sh | sh -s -- cursor
+npx ai-skill-grader cursor
 ```
 
 Manual install from this repo:
@@ -98,12 +98,11 @@ The full-report command talks to the live service (`aiskillgrader.com`); set
 - The full report is **instant for a skill we've already graded**; a brand-new
   one comes back as the fast preview with "grading, back in a few minutes."
 
-## Next steps (if this validates)
+## Still limited
 
 - Widen the block beyond flagged-skill *scripts* — inline commands and MCP calls
   (`beforeMCPExecution`) a flagged skill would trigger (needs command-level
   judgment, not just skill-text triage).
-- Standalone packaging so install needs no repo clone.
 
 Note: `beforeShellExecution` (and `beforeMCPExecution`) don't run in Cursor
 Cloud Agents, so the script-block is desktop-only; the read still runs everywhere.

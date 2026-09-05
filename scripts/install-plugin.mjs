@@ -232,6 +232,13 @@ function removeIfExists(target) {
   return true;
 }
 
+function removeWithBackup(target) {
+  if (!exists(target)) return null;
+  const backup = backupIfExists(target);
+  if (!dryRun) fs.rmSync(target, { recursive: true, force: true });
+  return backup;
+}
+
 function symlinkFile(src, dest) {
   ensureDir(path.dirname(dest));
   let backup = null;
@@ -259,10 +266,50 @@ function removeOurSymlink(dest) {
   return false;
 }
 
+function clineHooksInstalled() {
+  const hooksDir = path.join(home, "Documents", "Cline", "Hooks");
+  return [path.join(hooksDir, "TaskStart"), path.join(hooksDir, "PreToolUse")].some((target) => {
+    try {
+      const stat = fs.lstatSync(target);
+      return stat.isSymbolicLink() && /skill-grader/.test(fs.readlinkSync(target));
+    } catch {
+      return false;
+    }
+  });
+}
+
+function windsurfHooksInstalled() {
+  const hooksFile = path.join(home, ".codeium", "windsurf", "hooks.json");
+  if (!exists(hooksFile)) return false;
+  const config = readJson(hooksFile, null);
+  return !!(
+    config &&
+    config.hooks &&
+    Array.isArray(config.hooks.pre_run_command) &&
+    config.hooks.pre_run_command.some((item) => item && typeof item.command === "string" && /skill-grader/.test(item.command))
+  );
+}
+
+function removeSharedReportSkillIfUnused() {
+  if (clineHooksInstalled() || windsurfHooksInstalled()) return;
+  removeIfExists(path.join(home, ".agents", "skills", "skill-grader-report"));
+}
+
+function codexMarketplacePluginPath(pluginPath) {
+  const relative = path.relative(home, pluginPath);
+  if (!relative.startsWith("..") && !path.isAbsolute(relative)) return `./${relative.split(path.sep).join("/")}`;
+  return pluginPath;
+}
+
 function codexMarketplaceWithPlugin(existing, pluginPath) {
   const plugin = {
     name: "skill-grader",
-    source: { source: "local", path: pluginPath },
+    source: { source: "local", path: codexMarketplacePluginPath(pluginPath) },
+    policy: {
+      installation: "AVAILABLE",
+      authentication: "ON_INSTALL",
+    },
+    category: "Security",
   };
   const market = {
     name: "skill-grader-local",
@@ -298,6 +345,7 @@ function installCodex() {
   const current = readJson(marketplace, {});
   const next = codexMarketplaceWithPlugin(current, pluginPath);
   const backup = writeJson(marketplace, next);
+  installReportSkill(path.join(home, ".codex", "skills"));
   log(`Codex: ${dryRun ? "would add" : "added"} AI Skill Grader to ${marketplace}${backup ? ` (backup: ${backup})` : ""}.`);
 
   if (commandExists("codex") && !dryRun) {
@@ -318,9 +366,25 @@ function installCodex() {
 }
 
 function installClaude() {
-  const pluginPath = path.join(installRoot, "plugin", "skill-grader");
-  log(`Claude Code: plugin files ${dryRun ? "would be ready" : "are ready"}. Finish inside Claude Code with:`);
-  log(`  /plugin install ${pluginPath}`);
+  // Claude Code installs plugins from a marketplace, not a raw path. The plugin
+  // ships a local marketplace manifest (plugin/.claude-plugin/marketplace.json)
+  // whose root is installRoot/plugin. Claude COPIES the plugin into its own
+  // plugins/cache on install, which is why each adapter is self-contained.
+  const marketplacePath = path.join(installRoot, "plugin");
+  const pluginId = "skill-grader@skill-grader-local";
+  if (commandExists("claude") && !dryRun) {
+    childProcess.spawnSync("claude", ["plugin", "marketplace", "add", marketplacePath], { encoding: "utf8", stdio: "pipe" });
+    const result = childProcess.spawnSync("claude", ["plugin", "install", pluginId, "-y"], { encoding: "utf8", stdio: "pipe" });
+    if (result.status === 0) {
+      log(`Claude Code: installed ${pluginId}. Restart Claude Code to load it.`);
+      return;
+    }
+    log("Claude Code: marketplace is ready, but automatic install did not complete. Finish inside Claude Code with:");
+  } else {
+    log(`Claude Code: plugin files ${dryRun ? "would be ready" : "are ready"}. Finish inside Claude Code with:`);
+  }
+  log(`  /plugin marketplace add ${marketplacePath}`);
+  log(`  /plugin install ${pluginId}`);
 }
 
 function installCursor() {
@@ -350,7 +414,7 @@ function installCline() {
     return;
   }
   const pluginPath = path.join(installRoot, "plugin", "skill-grader-cline");
-  const hooksDir = path.join(home, "Documents", "Cline", "Rules", "Hooks");
+  const hooksDir = path.join(home, "Documents", "Cline", "Hooks");
   if (!dryRun) {
     fs.chmodSync(path.join(pluginPath, "hooks", "TaskStart"), 0o755);
     fs.chmodSync(path.join(pluginPath, "hooks", "PreToolUse"), 0o755);
@@ -396,26 +460,54 @@ function uninstallHooksFile(hooksFile, label) {
 
 function uninstallCodex() {
   const marketplace = path.join(home, ".agents", "plugins", "marketplace.json");
+  let marketplaceNote = "";
   if (exists(marketplace)) {
     const current = readJson(marketplace, null);
     if (current && Array.isArray(current.plugins)) {
       const kept = current.plugins.filter((p) => p && p.name !== "skill-grader");
-      if (kept.length !== current.plugins.length) writeJson(marketplace, { ...current, plugins: kept });
+      if (kept.length !== current.plugins.length) {
+        if (kept.length === 0 && current.name === "skill-grader-local") {
+          const backup = removeWithBackup(marketplace);
+          marketplaceNote = backup ? ` (backup: ${backup})` : "";
+        } else {
+          const backup = writeJson(marketplace, { ...current, plugins: kept });
+          marketplaceNote = backup ? ` (backup: ${backup})` : "";
+        }
+      }
     } else if (current && Array.isArray(current.marketplaces)) {
-      writeJson(marketplace, { ...current, marketplaces: current.marketplaces.filter((m) => m && m.name !== "skill-grader-local") });
+      const next = current.marketplaces.filter((m) => m && m.name !== "skill-grader-local");
+      if (next.length !== current.marketplaces.length) {
+        const backup = writeJson(marketplace, { ...current, marketplaces: next });
+        marketplaceNote = backup ? ` (backup: ${backup})` : "";
+      }
     } else if (Array.isArray(current)) {
-      writeJson(marketplace, current.filter((m) => m && m.name !== "skill-grader-local"));
+      const next = current.filter((m) => m && m.name !== "skill-grader-local");
+      if (next.length !== current.length) {
+        const backup = writeJson(marketplace, next);
+        marketplaceNote = backup ? ` (backup: ${backup})` : "";
+      }
     }
   }
   if (commandExists("codex") && !dryRun) {
     childProcess.spawnSync("codex", ["plugin", "remove", "skill-grader"], { stdio: "ignore" });
   }
-  log(`Codex: ${dryRun ? "would remove" : "removed"} the grader. If it lingers, run: codex plugin remove skill-grader`);
+  removeIfExists(path.join(home, ".codex", "skills", "skill-grader-report"));
+  log(`Codex: ${dryRun ? "would remove" : "removed"} the grader${marketplaceNote}. If it lingers, run: codex plugin remove skill-grader`);
 }
 
 function uninstallClaude() {
+  const pluginId = "skill-grader@skill-grader-local";
+  if (commandExists("claude") && !dryRun) {
+    const result = childProcess.spawnSync("claude", ["plugin", "uninstall", pluginId], { encoding: "utf8", stdio: "pipe" });
+    childProcess.spawnSync("claude", ["plugin", "marketplace", "remove", "skill-grader-local"], { stdio: "ignore" });
+    if (result.status === 0) {
+      log(`Claude Code: removed ${pluginId}.`);
+      return;
+    }
+  }
   log("Claude Code: remove it from inside Claude Code with:");
-  log("  /plugin uninstall skill-grader");
+  log(`  /plugin uninstall ${pluginId}`);
+  log("  /plugin marketplace remove skill-grader-local");
 }
 
 function uninstallCursor() {
@@ -425,18 +517,18 @@ function uninstallCursor() {
 }
 
 function uninstallCline() {
-  const hooksDir = path.join(home, "Documents", "Cline", "Rules", "Hooks");
+  const hooksDir = path.join(home, "Documents", "Cline", "Hooks");
   const a = removeOurSymlink(path.join(hooksDir, "TaskStart"));
   const b = removeOurSymlink(path.join(hooksDir, "PreToolUse"));
   removeIfExists(path.join(home, ".skill-grader-cline"));
-  removeIfExists(path.join(home, ".agents", "skills", "skill-grader-report"));
+  removeSharedReportSkillIfUnused();
   log(`Cline: ${dryRun ? "would remove" : a || b ? "removed" : "found no"} grader hooks in ${hooksDir}.`);
 }
 
 function uninstallWindsurf() {
   uninstallHooksFile(path.join(home, ".codeium", "windsurf", "hooks.json"), "Windsurf");
   removeIfExists(path.join(home, ".skill-grader-windsurf"));
-  removeIfExists(path.join(home, ".agents", "skills", "skill-grader-report"));
+  removeSharedReportSkillIfUnused();
 }
 
 function confirm(action) {
