@@ -5,7 +5,7 @@ description: Get the full AI Skill Grader report on a skill or repo, including w
 
 The user wants the full AI Skill Grader report on a skill (they will have named it or pasted a GitHub link).
 
-Run this command and show the user its output **verbatim** — do not summarize or reformat it:
+Run this command and show the user its output **verbatim** (do not summarize or reformat it):
 
 ```bash
 node "$HOME/.ai-skill-grader/scripts/report-installed.js" "<skill name or GitHub URL>"

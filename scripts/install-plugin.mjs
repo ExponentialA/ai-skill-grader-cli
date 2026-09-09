@@ -29,43 +29,59 @@ const yes = args.has("--yes") || args.has("-y");
 const all = args.has("--all");
 const uninstall = args.has("--uninstall") || args.has("uninstall");
 
+// Every tool the installer can still install when named explicitly. The other
+// three adapters ship in the repo but aren't verified end to end, so they are not
+// advertised, auto-detected, or swept by --all — only installed on explicit ask.
 const knownTools = ["codex", "claude", "cursor", "cline", "windsurf"];
+// The verified, user-facing tools: what we detect, list in help, and --all covers.
+const featuredTools = ["codex", "claude"];
 const rawArgs = process.argv.slice(2);
 const requested = knownTools.filter((tool) => args.has(`--${tool}`) || rawArgs.includes(tool));
-const tools = requested.length ? requested : all ? [...knownTools] : uninstall ? [...knownTools] : detectTools();
+// --all installs the verified tools; a bare uninstall still sweeps all five so it
+// cleans up any adapter a user installed explicitly before.
+const tools = requested.length ? requested : all ? [...featuredTools] : uninstall ? [...knownTools] : detectTools();
 
 function log(message = "") {
   process.stdout.write(`${message}\n`);
+}
+
+// A short, one-line reason from a failed spawn, so an auto-install failure tells
+// the user WHY instead of silently pointing them at the manual commands.
+function spawnFailReason(result) {
+  if (!result) return "";
+  const text = String(result.stderr || result.stdout || (result.error && result.error.message) || "").trim();
+  const firstLine = text.split("\n").map((l) => l.trim()).filter(Boolean)[0] || "";
+  return firstLine.slice(0, 200);
 }
 
 function usage() {
   log(`AI Skill Grader installer
 
 Install:
+  npx ai-skill-grader claude
   npx ai-skill-grader codex
   npx ai-skill-grader --all
 Uninstall:
-  npx ai-skill-grader uninstall cursor
+  npx ai-skill-grader uninstall
 
-Tools: codex, claude, cursor, cline, windsurf
+Tools: claude, codex
 
 Options:
   --dry-run   Show what would change without writing files.
   --yes       Skip the confirmation prompt.
-  --all       Every supported tool.
+  --all       Both supported tools.
 `);
 }
 
 function detectTools() {
   const found = [];
+  // Only auto-detect the verified tools. Never auto-install the unadvertised
+  // adapters: a user gets those only by naming one explicitly.
   // Note: ~/.agents is the cross-agent convention shared by several tools, so it
-  // is NOT a reliable signal for Codex specifically — require the codex CLI or
+  // is NOT a reliable signal for Codex specifically. Require the codex CLI or
   // ~/.codex instead.
   if (commandExists("codex") || exists(path.join(home, ".codex"))) found.push("codex");
   if (commandExists("claude") || exists(path.join(home, ".claude"))) found.push("claude");
-  if (exists(path.join(home, ".cursor"))) found.push("cursor");
-  if (process.platform !== "win32" && exists(path.join(home, "Documents", "Cline"))) found.push("cline");
-  if (exists(path.join(home, ".codeium", "windsurf"))) found.push("windsurf");
   return found;
 }
 
@@ -85,6 +101,44 @@ function commandExists(command) {
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+// Find a tool's CLI even when it isn't on PATH. Desktop/GUI installs of Claude
+// Code and Codex bundle the binary under Application Support / ~/.codex, so the
+// installer can finish the plugin install itself instead of printing commands
+// for the user to paste by hand. Returns a runnable path/name, or null.
+function findAgentBinary(tool) {
+  if (commandExists(tool)) return tool;
+  const candidates = [];
+  if (tool === "claude") {
+    const base = path.join(home, "Library", "Application Support", "Claude", "claude-code");
+    try {
+      for (const version of fs.readdirSync(base)) {
+        candidates.push(path.join(base, version, "claude.app", "Contents", "MacOS", "claude"));
+      }
+    } catch {
+      /* no desktop install */
+    }
+  } else if (tool === "codex") {
+    candidates.push(path.join(home, ".codex", "plugins", ".plugin-appserver", "codex"));
+  }
+  const usable = candidates.filter((p) => {
+    try {
+      fs.accessSync(p, fs.constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  // Newest build first (dir names are versions; fall back to mtime).
+  usable.sort((a, b) => {
+    try {
+      return fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs;
+    } catch {
+      return 0;
+    }
+  });
+  return usable[0] || null;
 }
 
 function ensureDir(dir) {
@@ -110,7 +164,7 @@ function readJson(file, fallback) {
   } catch (error) {
     throw new Error(
       `${file} is not valid JSON (${error.message}). ` +
-        `Left it untouched — fix it or move it aside, then re-run the installer.`
+        `Left it untouched. Fix it or move it aside, then re-run the installer.`
     );
   }
 }
@@ -348,16 +402,20 @@ function installCodex() {
   installReportSkill(path.join(home, ".codex", "skills"));
   log(`Codex: ${dryRun ? "would add" : "added"} AI Skill Grader to ${marketplace}${backup ? ` (backup: ${backup})` : ""}.`);
 
-  if (commandExists("codex") && !dryRun) {
-    const result = childProcess.spawnSync("codex", ["plugin", "add", "skill-grader@skill-grader-local"], {
+  const codexBin = dryRun ? null : findAgentBinary("codex");
+  if (codexBin) {
+    const result = childProcess.spawnSync(codexBin, ["plugin", "add", "skill-grader@skill-grader-local"], {
       encoding: "utf8",
       stdio: "pipe",
     });
     if (result.status === 0) {
-      log("Codex: installed plugin with `codex plugin add skill-grader@skill-grader-local`.");
+      log("Codex: installed and enabled. Restart Codex, then ask it for a report on any skill by name or GitHub link.");
+      log("  (Codex checks on request, not automatically. To review a whole set at once, grade the repo at aiskillgrader.com.)");
     } else {
       log("Codex: marketplace entry is ready. Finish with:");
       log("  codex plugin add skill-grader@skill-grader-local");
+      const why = spawnFailReason(result);
+      if (why) log(`  (couldn't finish automatically: ${why})`);
     }
   } else {
     log("Codex: finish with:");
@@ -372,14 +430,20 @@ function installClaude() {
   // plugins/cache on install, which is why each adapter is self-contained.
   const marketplacePath = path.join(installRoot, "plugin");
   const pluginId = "skill-grader@skill-grader-local";
-  if (commandExists("claude") && !dryRun) {
-    childProcess.spawnSync("claude", ["plugin", "marketplace", "add", marketplacePath], { encoding: "utf8", stdio: "pipe" });
-    const result = childProcess.spawnSync("claude", ["plugin", "install", pluginId, "-y"], { encoding: "utf8", stdio: "pipe" });
+  const bin = dryRun ? null : findAgentBinary("claude");
+  if (bin) {
+    childProcess.spawnSync(bin, ["plugin", "marketplace", "add", marketplacePath], { encoding: "utf8", stdio: "pipe" });
+    const result = childProcess.spawnSync(bin, ["plugin", "install", pluginId, "-y"], { encoding: "utf8", stdio: "pipe" });
     if (result.status === 0) {
-      log(`Claude Code: installed ${pluginId}. Restart Claude Code to load it.`);
+      log("Claude Code: installed and enabled. Open a new Claude Code session to load it.");
       return;
     }
-    log("Claude Code: marketplace is ready, but automatic install did not complete. Finish inside Claude Code with:");
+    log("Claude Code: could not finish the install automatically. Do it inside Claude Code with:");
+    log(`  /plugin marketplace add ${marketplacePath}`);
+    log(`  /plugin install ${pluginId}`);
+    const why = spawnFailReason(result);
+    if (why) log(`  (couldn't finish automatically: ${why})`);
+    return;
   } else {
     log(`Claude Code: plugin files ${dryRun ? "would be ready" : "are ready"}. Finish inside Claude Code with:`);
   }
@@ -410,7 +474,7 @@ function installCursor() {
 
 function installCline() {
   if (process.platform === "win32") {
-    log("Cline: hooks aren't supported on Windows — skipping.");
+    log("Cline: hooks aren't supported on Windows, skipping.");
     return;
   }
   const pluginPath = path.join(installRoot, "plugin", "skill-grader-cline");
@@ -545,6 +609,16 @@ async function main() {
     usage();
     return;
   }
+  // A positional token that isn't "uninstall" or a known tool is almost always a
+  // typo (e.g. "cluade"). Don't silently fall through to auto-detect and install
+  // something the user didn't ask for; say what's wrong and stop.
+  const unknown = rawArgs.filter((a) => !a.startsWith("-") && a !== "uninstall" && !knownTools.includes(a));
+  if (unknown.length) {
+    log(`I don't recognize: ${unknown.join(", ")}. Supported tools are claude and codex.`);
+    usage();
+    process.exitCode = 1;
+    return;
+  }
   if (!tools.length) {
     log("I could not detect an installed agent. Choose one explicitly:");
     usage();
@@ -556,7 +630,11 @@ async function main() {
   log(`Home: ${installRoot}`);
   log(`Tools: ${tools.join(", ")}`);
   if (dryRun) log("Dry run: no files will be changed.");
-  if (!(await confirm(uninstall ? "Uninstall" : "Proceed"))) {
+  // Naming a tool explicitly (npx ai-skill-grader claude) is already the intent,
+  // so skip the extra prompt. Still confirm for uninstall and for broad installs
+  // (--all or auto-detected) where the user didn't name what to touch.
+  const explicitInstall = !uninstall && requested.length > 0;
+  if (!explicitInstall && !(await confirm(uninstall ? "Uninstall" : "Proceed"))) {
     log("Canceled.");
     return;
   }

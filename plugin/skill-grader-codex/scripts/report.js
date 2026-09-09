@@ -35,19 +35,25 @@ function skillRoots() {
   ];
 }
 
+// Returns { url } to grade from GitHub, { content, name } to grade the on-disk
+// SKILL.md (an installed skill with no source link), or { needUrl } when the skill
+// isn't found locally at all.
 function resolveSource(arg) {
-  if (/^https?:\/\//i.test(arg)) return arg;
+  if (/^https?:\/\//i.test(arg)) return { url: arg };
   const leaf = String(arg).split(":").pop().trim();
   for (const root of skillRoots()) {
     const dir = path.join(root, leaf);
+    let text;
     try {
       const f = fs.readdirSync(dir).find((n) => n.toLowerCase() === "skill.md");
       if (!f) continue;
-      const m = fs.readFileSync(path.join(dir, f), "utf8").match(/^(?:source|repo|url|homepage):\s*(https?:\/\/\S+)/im);
-      return m ? m[1] : { needUrl: true };
+      text = fs.readFileSync(path.join(dir, f), "utf8");
     } catch (_error) {
-      /* not here */
+      continue; // not in this root
     }
+    const m = text.match(/^(?:source|repo|url|homepage):\s*(https?:\/\/\S+)/im);
+    // Prefer the declared source URL; otherwise grade the content we have on disk.
+    return m ? { url: m[1] } : { content: text, name: leaf };
   }
   return { needUrl: true };
 }
@@ -60,16 +66,17 @@ async function main() {
   }
   const src = resolveSource(arg);
   if (src && src.needUrl) {
-    console.log(`I couldn't find where "${arg}" came from. Paste its GitHub link and I'll pull the full report.`);
+    console.log(`I couldn't find "${arg}" among your installed skills. Paste its GitHub link and I'll pull the full report.`);
     return;
   }
+  const payload = src.url ? { sourceUrl: src.url } : { content: src.content, name: src.name };
 
   let data;
   try {
     const res = await fetch(API, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sourceUrl: src }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -84,7 +91,7 @@ async function main() {
 
   const out = [];
   if (!data.graded) {
-    out.push(`> ${data.note || "This one hasn't been deep-graded yet — here's the fast preview. The full report takes a few minutes."}`, "");
+    out.push(`> ${data.note || "This one isn't deep-graded yet, so this is the fast preview. The full report takes a few minutes."}`, "");
   }
   if (reportText) {
     out.push(reportText({ source: data.source, skills: data.skills || [], partial: null }));

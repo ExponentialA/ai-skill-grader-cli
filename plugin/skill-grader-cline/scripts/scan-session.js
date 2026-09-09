@@ -112,6 +112,15 @@ function main() {
   }
   if (typeof triageSignals !== "function") allow();
 
+  // Optional: OUR authoritative graded verdict by content hash. When it resolves
+  // a skill, that verdict wins over the fast regex in the read. Fails soft.
+  let gradedRisk;
+  try {
+    ({ gradedRisk } = require(path.resolve(__dirname, "../shared/verdict-lookup.js")));
+  } catch (_error) {
+    /* fall back to regex-only triage */
+  }
+
   let cwd = process.cwd();
   try {
     const input = JSON.parse(fs.readFileSync(0, "utf8"));
@@ -143,13 +152,19 @@ function main() {
   const fresh = [];
   for (const [name, file] of discovered) {
     if (seen.has(name)) continue;
-    let sig;
+    let text;
     try {
-      sig = triageSignals(fs.readFileSync(file, "utf8"));
+      text = fs.readFileSync(file, "utf8");
     } catch (_error) {
       continue; // unreadable — skip, try again next task
     }
-    fresh.push({ name, file, sig });
+    let sig;
+    try {
+      sig = triageSignals(text);
+    } catch (_error) {
+      continue;
+    }
+    fresh.push({ name, file, sig, graded: gradedRisk ? gradedRisk(text) : null });
     seen.add(name);
   }
 

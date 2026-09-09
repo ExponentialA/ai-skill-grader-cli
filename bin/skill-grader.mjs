@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // AI Skill Grader CLI — the `npx` entry point.
 //
-//   npx ai-skill-grader codex          # install for one tool
-//   npx ai-skill-grader --all          # install for all
-//   npx ai-skill-grader uninstall cursor
+//   npx ai-skill-grader claude         # install for one tool
+//   npx ai-skill-grader --all          # install for both
+//   npx ai-skill-grader uninstall
 //   npx ai-skill-grader report <skill or GitHub URL>
 //
 // This thin dispatcher runs the real scripts with the same Node that ran it.
@@ -29,7 +29,7 @@ function help() {
       "Uninstall: npx ai-skill-grader uninstall <tool | --all>",
       "Report:    npx ai-skill-grader report <skill name or GitHub URL>",
       "",
-      "Tools: codex, claude, cursor, cline, windsurf",
+      "Tools: claude, codex",
       "Options: --dry-run, --yes",
       "",
     ].join("\n")

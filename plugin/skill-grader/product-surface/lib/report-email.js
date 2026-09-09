@@ -148,7 +148,7 @@ function reportKind(source, skills) {
 }
 
 const EMAIL = {
-  wrap: "max-width:760px;margin:0 auto;padding:30px 18px 46px;",
+  wrap: "width:100%;max-width:760px;margin:0 auto;padding:30px 18px 46px;box-sizing:border-box;",
   brand: "font-weight:800;color:#191813;margin:0 0 24px;font-size:18px;line-height:1.2;font-family:Arial,sans-serif;",
   brandMark: "color:#33507a;",
   hero: "border:1px solid #d2cfc3;border-left:7px solid #33507a;border-radius:12px;background:#fbfbf8;padding:28px 26px 22px;margin-bottom:24px;",
@@ -158,7 +158,7 @@ const EMAIL = {
   eyebrow: "font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#33507a;margin:0 0 10px;",
   h1: "font-size:32px;line-height:1.05;margin:0 0 12px;letter-spacing:-.02em;color:#191813;font-family:Arial,sans-serif;",
   h2: "font-size:26px;line-height:1.05;margin:8px 0 0;letter-spacing:-.02em;color:#191813;font-family:Arial,sans-serif;",
-  meta: "color:#565349;font-size:15px;margin:0 0 10px;line-height:1.45;",
+  meta: "color:#565349;font-size:15px;margin:0 0 10px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word;",
   chips: "margin-top:15px;",
   chip: "display:inline-block;margin:0 6px 7px 0;padding:6px 10px;border-radius:999px;background:#eceae3;color:#565349;font-size:13px;line-height:1.2;",
   reportHead: "padding:20px 24px 16px;",
@@ -169,9 +169,10 @@ const EMAIL = {
   verdict: "padding:14px 24px;",
   verdictLabel: "font-size:24px;font-weight:800;letter-spacing:-.02em;color:#191813;line-height:1.2;font-family:Arial,sans-serif;",
   verdictPill: "display:inline-block;margin-left:10px;padding:3px 10px;border-radius:999px;background:#eceae3;color:#565349;font-size:12px;line-height:1.4;vertical-align:middle;",
-  anatomyTable: "width:100%;border-collapse:collapse;",
-  anatomyLabel: "padding:9px 24px;border-top:1px solid #e2e0d7;color:#565349;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;vertical-align:baseline;",
-  anatomyValue: "padding:9px 24px;border-top:1px solid #e2e0d7;color:#191813;text-align:right;font-size:14px;vertical-align:baseline;",
+  anatomyTable: "width:100%;border-collapse:collapse;table-layout:fixed;",
+  anatomyCell: "padding:12px 24px;border-top:1px solid #e2e0d7;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;",
+  anatomyLabel: "display:block;margin:0 0 4px;color:#565349;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;",
+  anatomyValue: "display:block;color:#191813;text-align:left;font-size:14px;line-height:1.45;",
   group: "padding:20px 24px;",
   groupBorder: "border-top:1px solid #e2e0d7;",
   groupH: "font-size:12px;margin:0 0 12px;color:#33507a;text-transform:uppercase;letter-spacing:.05em;font-weight:800;line-height:1.25;font-family:Arial,sans-serif;",
@@ -412,7 +413,7 @@ function reportHtml({ source, skills, partial }) {
       .map(([l, v, tone], rowIndex) => {
         const topBorder = rowIndex === 0 ? "border-top:0;" : "";
         const valueTone = tone === "good" ? "color:#1d854f;font-weight:700;" : "";
-        return `<tr><td class="al" style="${EMAIL.anatomyLabel}${topBorder}">${escapeHtml(l)}</td><td class="av${tone === "good" ? " good" : ""}" style="${EMAIL.anatomyValue}${topBorder}${valueTone}">${escapeHtml(plainEmailText(v))}</td></tr>`;
+        return `<tr><td class="anatomy-cell" style="${EMAIL.anatomyCell}${topBorder}"><span style="${EMAIL.anatomyLabel}">${escapeHtml(l)}</span><span style="${EMAIL.anatomyValue}${valueTone}">${escapeHtml(plainEmailText(v))}</span></td></tr>`;
       })
       .join("");
     const count = verdictCount(skill);
@@ -491,7 +492,7 @@ function reportHtml({ source, skills, partial }) {
           ${counts.good ? `<span class="chip good" style="${EMAIL.chip}background:#e7f1ea;color:#1d854f;">${counts.good} no issues flagged</span>` : ""}
         </div>
         ${summaryInner}
-        ${source && source.url ? `<p class="meta" style="${EMAIL.meta}"><a href="${escapeHtml(source.url)}" style="color:#33507a;">${escapeHtml(source.url)}</a></p>` : ""}
+        ${source && source.url ? `<p class="meta" style="${EMAIL.meta}"><a href="${escapeHtml(source.url)}" style="color:#33507a;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(source.url)}</a></p>` : ""}
       </div>
       ${
         shouldShowPartialBanner(partial)
