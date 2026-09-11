@@ -1,6 +1,6 @@
 {
   "name": "ai-skill-grader",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Install the AI Skill Grader — a plain-English run-safety read (and script block) for the skills your coding agent runs. Works with Codex, Claude Code, Cursor, Cline, and Windsurf.",
   "bin": {
     "skill-grader": "bin/skill-grader.mjs"
