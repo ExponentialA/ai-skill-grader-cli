@@ -1,11 +1,11 @@
 ---
 name: skill-grader-report
-description: Get the full AI Skill Grader report on a skill or repo — what it can touch, what to check first, and whether anything was flagged. Use whenever the user asks for the full report, a deep report, or to "grade" a skill they named or pasted a GitHub link to.
+description: Get the full AI Skill Grader report on a skill or repo: what it can touch, what to check first, and whether anything was flagged. Use whenever the user asks for the full report, a deep report, or to "grade" a skill they named or pasted a GitHub link to.
 ---
 
 The user wants the full AI Skill Grader report on a skill (they will have named it or pasted a GitHub link).
 
-Run this command and show the user its output **verbatim** — do not summarize or reformat it:
+Run this command and show the user its output **verbatim** (do not summarize or reformat it):
 
 ```bash
 node "$(cat "$HOME/.skill-grader-windsurf/skill-grader-root")/scripts/report.js" "<skill name or GitHub URL>"
@@ -14,5 +14,5 @@ node "$(cat "$HOME/.skill-grader-windsurf/skill-grader-root")/scripts/report.js"
 Replace `<skill name or GitHub URL>` with what the user gave you.
 
 - An already-graded skill returns the full report instantly.
-- A brand-new one returns the fast preview with a note that the deep grade takes a few minutes.
-- If the `skill-grader-root` file does not exist, the grader hasn't run yet — install it again and try again.
+- A new skill returns the fast preview. Do NOT poll, wait, or re-run for a deep report to appear: the deep grade for a new skill is produced on request and delivered by email only. The output tells the user how to get it; show that and stop.
+- If the `skill-grader-root` file does not exist, the grader hasn't run yet. Install it again and try again.

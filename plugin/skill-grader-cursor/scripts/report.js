@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Fetches the full report for a skill/repo from AI Skill Grader and prints it in
-// the thread — using the SITE'S OWN renderer (reportText), so the content is
-// identical to the site and the emailed report, no difference. Instant for an
-// already-graded skill; a brand-new one comes back as the fast preview with a
-// note that the deep grade takes a few minutes.
+// the thread, using the site's own renderer (reportText), so the content is
+// identical to the site and the emailed report. Instant for an already-graded
+// skill; a new one comes back as the fast preview, with the deep report available
+// on request by email (it is not produced here).
 //
 // Cursor build: resolves a bare skill name against Cursor's skill locations
 // (~/.cursor/skills, ~/.agents/skills, and the project's .cursor/.agents dirs),
@@ -91,8 +91,10 @@ async function main() {
   }
 
   const out = [];
+  const url = data.source && data.source.url;
+  const webLink = url ? `${SITE}source.html?source=${encodeURIComponent(url)}` : SITE;
   if (!data.graded) {
-    out.push(`> ${data.note || "This one isn't deep-graded yet, so this is the fast preview. The full report takes a few minutes."}`, "");
+    out.push(`> ${data.note || "This is the fast preview. We haven't deep-graded this skill yet, so the full report isn't instant."}`, "");
   }
   if (reportText) {
     out.push(reportText({ source: data.source, skills: data.skills || [], partial: null }));
@@ -100,8 +102,18 @@ async function main() {
     // Fallback if the renderer isn't reachable (shouldn't happen when installed from the repo).
     out.push(JSON.stringify(data.skills, null, 2));
   }
-  const link = data.source && data.source.url ? `${SITE}?source=${encodeURIComponent(data.source.url)}` : SITE;
-  out.push("", `See the full styled report: ${link}`);
+  if (data.graded) {
+    out.push("", `See it styled on the web: ${webLink}`);
+  } else {
+    // Novel skill: the deep grade is produced on request and delivered by email only.
+    // Do not imply it will appear here or on the web page (it will not, until Tier 2).
+    out.push(
+      "",
+      "To get the full deep report:",
+      `Open ${webLink} and enter your email. We run the deeper grade in the background and email it to you; it will not show up here or on the web page, only by email.`,
+      "(Skills we have already graded return the full report here instantly. New ones like this are graded on request.)"
+    );
+  }
   console.log(out.join("\n"));
 }
 

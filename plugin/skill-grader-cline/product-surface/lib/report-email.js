@@ -398,9 +398,9 @@ function reportHtml({ source, skills, partial }) {
       ? ""
       : attention.length
         ? `<div style="margin:16px 0 0;"><p class="eyebrow" style="${EMAIL.eyebrow}">Needs your attention</p><ul style="margin:0;padding-left:20px;color:#565349;font-size:15px;line-height:1.5;">${attention
-            .map((s) => `<li style="margin:7px 0;"><strong style="color:#191813;">${escapeHtml(s.title)}</strong> — ${escapeHtml(verdictLineText(s))}</li>`)
-            .join("")}</ul>${counts.good ? `<p style="margin:12px 0 0;color:#565349;font-size:14px;line-height:1.5;">The other ${counts.good} ran clean in our checks. Clean isn't proof they're correct — double-check anything you'll rely on.</p>` : ""}</div>`
-        : `<p style="margin:14px 0 0;color:#565349;font-size:14px;line-height:1.5;">All ${ordered.length} passed our pre-install checks. Clean isn't proof they're correct — double-check anything you'll rely on.</p>`;
+            .map((s) => `<li style="margin:7px 0;"><strong style="color:#191813;">${escapeHtml(s.title)}</strong>: ${escapeHtml(verdictLineText(s))}</li>`)
+            .join("")}</ul>${counts.good ? `<p style="margin:12px 0 0;color:#565349;font-size:14px;line-height:1.5;">The other ${counts.good} ran clean in our checks. Clean isn't proof they're correct; double-check anything you'll rely on.</p>` : ""}</div>`
+        : `<p style="margin:14px 0 0;color:#565349;font-size:14px;line-height:1.5;">All ${ordered.length} passed our pre-install checks. Clean isn't proof they're correct; double-check anything you'll rely on.</p>`;
   const countLine = [
     `${ordered.length} ${ordered.length === 1 ? "skill" : "skills"} reviewed`,
     counts.danger ? `${counts.danger} do not trust` : "",
@@ -531,7 +531,7 @@ function reportText({ source, skills, partial }) {
     );
     if (attention.length) {
       lines.push("Needs your attention:");
-      attention.forEach((s) => lines.push(`- ${s.title} — ${verdictLineText(s)}`));
+      attention.forEach((s) => lines.push(`- ${s.title}: ${verdictLineText(s)}`));
       if (counts.good) lines.push(`The other ${counts.good} ran clean in our checks. Clean isn't proof they're correct.`);
       lines.push("");
     }
@@ -548,7 +548,7 @@ function reportText({ source, skills, partial }) {
         ...emailAnatomyRows(skill).map(([label, value]) => `- ${label}: ${plainEmailText(value)}`),
         `- What we found: ${Array.isArray(skill.findings) && skill.findings.length ? verdictCount(skill) : "No package issue flagged in the pre-install review."}`,
         "",
-        "The detailed report has not been produced yet. It takes a few minutes because deeper grading uses a separate background check.",
+        "The full report is graded on request and delivered by email; this is the fast preview.",
         ""
       );
       return;

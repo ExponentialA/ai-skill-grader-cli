@@ -258,7 +258,7 @@ Run this command and show the user its output **verbatim**:
 Replace \`<skill name or GitHub URL>\` with what the user gave you.
 
 - An already-graded skill returns the full report instantly.
-- A brand-new one returns the fast preview with a note that the deep grade takes a few minutes.
+- A new skill returns the fast preview. Do NOT poll, wait, or re-run for a deep report to appear: the deep grade for a new skill is produced on request and delivered by email only. The output tells the user how to get it; show that and stop.
 `;
 }
 
