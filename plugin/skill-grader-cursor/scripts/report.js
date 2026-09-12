@@ -92,7 +92,7 @@ async function main() {
 
   const out = [];
   const url = data.source && data.source.url;
-  const webLink = url ? `${SITE}source.html?source=${encodeURIComponent(url)}` : SITE;
+  const webLink = url ? `${SITE}source.html?source=${encodeURIComponent(url)}` : "";
   if (!data.graded) {
     out.push(`> ${data.note || "This is the fast preview. We haven't deep-graded this skill yet, so the full report isn't instant."}`, "");
   }
@@ -103,15 +103,22 @@ async function main() {
     out.push(JSON.stringify(data.skills, null, 2));
   }
   if (data.graded) {
-    out.push("", `See it styled on the web: ${webLink}`);
-  } else {
-    // Novel skill: the deep grade is produced on request and delivered by email only.
-    // Do not imply it will appear here or on the web page (it will not, until Tier 2).
+    if (webLink) out.push("", `See it styled on the web: ${webLink}`);
+  } else if (webLink) {
+    // Novel skill WITH a public URL: the email unlock on source.html can deep-grade it.
     out.push(
       "",
       "To get the full deep report:",
       `Open ${webLink} and enter your email. We run the deeper grade in the background and email it to you; it will not show up here or on the web page, only by email.`,
       "(Skills we have already graded return the full report here instantly. New ones like this are graded on request.)"
+    );
+  } else {
+    // A local skill with NO public source URL: the deep grade needs a repo to clone,
+    // so the preview is all we can produce. Don't point at a page that can't grade it.
+    out.push(
+      "",
+      "This is a local skill with no public source, so this preview is the read we can give here.",
+      "For the full deep report we need its public GitHub URL. If it has one, ask for the full report on that URL."
     );
   }
   console.log(out.join("\n"));
